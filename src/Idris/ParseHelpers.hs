@@ -675,19 +675,26 @@ collect :: [PDecl] -> [PDecl]
 collect (c@(PClauses _ o _ _) : ds)
     = clauses (cname c) [] (c : ds)
   where clauses :: Maybe Name -> [PClause] -> [PDecl] -> [PDecl]
-        clauses j@(Just n) acc (PClauses fc _ _ [PClause fc' n' l ws r w] : ds)
-           | n == n' = clauses j (PClause fc' n' l ws r (collect w) : acc) ds
-        clauses j@(Just n) acc (PClauses fc _ _ [PWith fc' n' l ws r pn w] : ds)
-           | n == n' = clauses j (PWith fc' n' l ws r pn (collect w) : acc) ds
+        clauses j@(Just n) acc (PClauses fc _ _ [PAutoProveClause (PClause fc' n' l ws r w)] : ds)
+           | n == n' = clauses j (PAutoProveClause (PClause fc' n' l ws r (collect w)) : acc) ds
+        clauses j@(Just n) acc (PClauses fc _ _ [PProveClause prf (PClause fc' n' l ws r w)] : ds)
+           | n == n' = clauses j (PProveClause prf (PClause fc' n' l ws r (collect w)) : acc) ds
+        clauses j@(Just n) acc (PClauses fc _ _ [PAutoProveClause (PWith fc' n' l ws r pn w)] : ds)
+           | n == n' = clauses j (PAutoProveClause (PWith fc' n' l ws r pn (collect w)) : acc) ds
+        clauses j@(Just n) acc (PClauses fc _ _ [PProveClause prf (PWith fc' n' l ws r pn w)] : ds)
+           | n == n' = clauses j (PProveClause prf (PWith fc' n' l ws r pn (collect w)) : acc) ds
         clauses (Just n) acc xs = PClauses (fcOf c) o n (reverse acc) : collect xs
         clauses Nothing acc (x:xs) = collect xs
         clauses Nothing acc [] = []
 
         cname :: PDecl -> Maybe Name
-        cname (PClauses fc _ _ [PClause _ n _ _ _ _]) = Just n
-        cname (PClauses fc _ _ [PWith   _ n _ _ _ _ _]) = Just n
-        cname (PClauses fc _ _ [PClauseR _ _ _ _]) = Nothing
-        cname (PClauses fc _ _ [PWithR _ _ _ _ _]) = Nothing
+        cname (PClauses fc _ _ [PAutoProveClause c]) = cname' c
+        cname (PClauses fc _ _ [PProveClause _ c]) = cname' c
+        cname' :: PClause'' PTerm -> Maybe Name
+        cname' (PClause _ n _ _ _ _) = Just n
+        cname' (PWith _ n _ _ _ _ _) = Just n
+        cname' (PClauseR _ _ _ _) = Nothing
+        cname' (PWithR _ _ _ _ _) = Nothing
         fcOf :: PDecl -> FC
         fcOf (PClauses fc _ _ _) = fc
 collect (PParams f ns ps : ds) = PParams f ns (collect ps) : collect ds

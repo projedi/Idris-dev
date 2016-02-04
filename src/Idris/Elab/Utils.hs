@@ -142,8 +142,10 @@ checkDocs fc args tm = cd (Map.fromList args) tm
 decorateid decorate (PTy doc argdocs s f o n nfc t) = PTy doc argdocs s f o (decorate n) nfc t
 decorateid decorate (PClauses f o n cs)
    = PClauses f o (decorate n) (map dc cs)
-    where dc (PClause fc n t as w ds) = PClause fc (decorate n) (dappname t) as w ds
-          dc (PWith   fc n t as w pn ds)
+    where dc (PAutoProveClause c) = PAutoProveClause (dc' c)
+          dc (PProveClause prf c) = PProveClause (dappname prf) (dc' c)
+          dc' (PClause fc n t as w ds) = PClause fc (decorate n) (dappname t) as w ds
+          dc' (PWith   fc n t as w pn ds)
                  = PWith fc (decorate n) (dappname t) as w pn
                             (map (decorateid decorate) ds)
           dappname (PApp fc (PRef fc' hl n) as) = PApp fc (PRef fc' hl (decorate n)) as

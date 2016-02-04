@@ -40,7 +40,7 @@ import System.Directory
 import Codec.Archive.Zip
 
 ibcVersion :: Word16
-ibcVersion = 132
+ibcVersion = 133
 
 -- When IBC is being loaded - we'll load different things (and omit different
 -- structures/definitions) depending on which phase we're in
@@ -1474,7 +1474,7 @@ instance Binary SyntaxInfo where
                x7 <- get
                return (Syn x1 x2 x3 x4 [] id x5 x6 Nothing 0 x7 0)
 
-instance (Binary t) => Binary (PClause' t) where
+instance (Binary t) => Binary (PClause'' t) where
         put x
           = case x of
                 PClause x1 x2 x3 x4 x5 x6 -> do putWord8 0
@@ -1532,6 +1532,25 @@ instance (Binary t) => Binary (PClause' t) where
                            x4 <- get
                            x5 <- get
                            return (PWithR x1 x2 x3 x4 x5)
+                   _ -> error "Corrupted binary data for PClause''"
+
+instance (Binary t) => Binary (PClause' t) where
+        put x
+          = case x of
+                PAutoProveClause x1 -> do putWord8 0
+                                          put x1
+                PProveClause x1 x2 ->
+                  do putWord8 1
+                     put x1
+                     put x2
+        get
+          = do i <- getWord8
+               case i of
+                   0 -> do x1 <- get
+                           return (PAutoProveClause x1)
+                   1 -> do x1 <- get
+                           x2 <- get
+                           return (PProveClause x1 x2)
                    _ -> error "Corrupted binary data for PClause'"
 
 instance (Binary t) => Binary (PData' t) where

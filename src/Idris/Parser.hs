@@ -351,13 +351,16 @@ declExtension syn ns rules =
 
     updateField ns (m, p, t, doc) = (updateRecCon ns m, p, t, doc)
 
-    updateClause ns (PClause fc n t ts t' ds)
+    updateClause ns (PAutoProveClause c) = PAutoProveClause (updateClause' ns c)
+    updateClause ns (PProveClause prf c) = PProveClause prf (updateClause' ns c)
+
+    updateClause' ns (PClause fc n t ts t' ds)
        = PClause fc (updateB ns n) t ts t' (map (update ns) ds)
-    updateClause ns (PWith fc n t ts t' m ds)
+    updateClause' ns (PWith fc n t ts t' m ds)
        = PWith fc (updateB ns n) t ts t' m (map (update ns) ds)
-    updateClause ns (PClauseR fc ts t ds)
+    updateClause' ns (PClauseR fc ts t ds)
        = PClauseR fc ts t (map (update ns) ds)
-    updateClause ns (PWithR fc ts t m ds)
+    updateClause' ns (PWithR fc ts t m ds)
        = PWithR fc ts t m (map (update ns) ds)
 
     updateData ns (PDatadecl n fc t cs)
@@ -1073,6 +1076,15 @@ rhs syn n = do lchar '='; expr syn
           where addLetC (l, r) = (l, addLet fc nm r)
         addLet fc nm r = (PLet fc (sUN "value") NoFC Placeholder r (PMetavar NoFC nm))
 
+clause :: SyntaxInfo -> IdrisParser PClause
+clause syn = do try (lchar '%' *> reserved "proveClause")
+                prf <- expr syn
+                -- TODO: Require newline
+                c <- clause' syn
+                return $ PProveClause prf c
+         <|> PAutoProveClause <$> clause' syn
+         <?> "clause with possible proof"
+
 {- |Parses a function clause
 
 @
@@ -1097,8 +1109,8 @@ ImplicitOrArgExpr ::= ImplicitArg | ArgExpr;
 WhereOrTerminator ::= WhereBlock | Terminator;
 @
 -}
-clause :: SyntaxInfo -> IdrisParser PClause
-clause syn
+clause' :: SyntaxInfo -> IdrisParser (PClause'' PTerm)
+clause' syn
          = do wargs <- try (do pushIndent; some (wExpr syn))
               fc <- getFC
               ist <- get
@@ -1218,12 +1230,16 @@ clause syn
                                   return (Just n))
 
     fillLHS :: Name -> PTerm -> [PTerm] -> PClause -> PClause
-    fillLHS n capp owargs (PClauseR fc wargs v ws)
+    fillLHS n capp owargs (PAutoProveClause c) = PAutoProveClause (fillLHS' n capp owargs c)
+    fillLHS n capp owargs (PProveClause prf c) = PProveClause prf (fillLHS' n capp owargs c)
+
+    fillLHS' :: Name -> PTerm -> [PTerm] -> (PClause'' PTerm) -> (PClause'' PTerm)
+    fillLHS' n capp owargs (PClauseR fc wargs v ws)
        = PClause fc n capp (owargs ++ wargs) v ws
-    fillLHS n capp owargs (PWithR fc wargs v pn ws)
+    fillLHS' n capp owargs (PWithR fc wargs v pn ws)
        = PWith fc n capp (owargs ++ wargs) v pn
             (map (fillLHSD n capp (owargs ++ wargs)) ws)
-    fillLHS _ _ _ c = c
+    fillLHS' _ _ _ c = c
 
     fillLHSD :: Name -> PTerm -> [PTerm] -> PDecl -> PDecl
     fillLHSD n c a (PClauses fc o fn cs) = PClauses fc o fn (map (fillLHS n c a) cs)

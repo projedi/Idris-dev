@@ -326,7 +326,7 @@ elabProjection info cname pname plicity projTy pdoc psyn fc targetTy cn phArgs f
 
        rec_elabDecl info EAll info ty
 
-       let clause = PClause fc pname lhs [] rhs []
+       let clause = PAutoProveClause (PClause fc pname lhs [] rhs [])
        rec_elabDecl info EAll info $ PClauses fc [] pname [clause]
   where
     -- | The type of the projection function.
@@ -383,7 +383,7 @@ elabUpdate info cname pname plicity pty pdoc psyn fc sty cn args fnames i option
        let rhs = generateRhs
        logElab 1 $ "RHS of " ++ show set_pname ++ ": " ++ showTmImpls rhs
 
-       let clause = PClause fc set_pname lhs [] rhs []
+       let clause = PAutoProveClause (PClause fc set_pname lhs [] rhs [])
 
        idrisCatch (do rec_elabDecl info EAll info ty
                       rec_elabDecl info EAll info $ PClauses fc [] set_pname [clause])

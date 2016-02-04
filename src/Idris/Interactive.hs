@@ -237,7 +237,7 @@ doProofSearch fn updatefile rec l n hints (Just depth)
          let fc = fileFC fn
          let body t = PProof [Try (TSeq Intros (ProofSearch rec False depth t psnames hints))
                                   (ProofSearch rec False depth t psnames hints)]
-         let def = PClause fc mn (PRef fc [] mn) [] (body top) []
+         let def = PAutoProveClause (PClause fc mn (PRef fc [] mn) [] (body top) [])
          newmv_pre <- idrisCatch
              (do elabDecl' EAll recinfo (PClauses fc [] mn [def])
                  (tm, ty) <- elabVal recinfo ERHS (PRef fc [] mn)

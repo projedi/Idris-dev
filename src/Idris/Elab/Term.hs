@@ -1370,7 +1370,7 @@ elab ist info emode opts fn tm
                                                      keepscrName scr)) args'
                          lhs = PApp (getFC fc l) (PRef NoFC [] n)
                                  (map (mkLHSarg l) args'') in
-                            PClause (getFC fc l) n lhs [] r []
+                            PAutoProveClause (PClause (getFC fc l) n lhs [] r [])
 
              -- Keep scrutinee available if it's just a name (this makes
              -- the names in scope look better when looking at a hole on

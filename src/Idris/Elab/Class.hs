@@ -212,7 +212,7 @@ elabClass info syn_in doc fc constraints tn tnfc ps pDocs fds ds mcn cd
              addIBC (IBCInstance False True conn' cfn)
 --              iputStrLn ("Added " ++ show (conn, cfn, ty))
              return [PTy emptyDocstring [] syn fc [] cfn NoFC ty,
-                     PClauses fc [Dictionary] cfn [PClause fc cfn lhs [] rhs []]]
+                     PClauses fc [Dictionary] cfn [PAutoProveClause (PClause fc cfn lhs [] rhs [])]]
 
     -- | Generate a top level function which looks up a method in a given
     -- dictionary (this is inlinable, always)
@@ -234,7 +234,7 @@ elabClass info syn_in doc fc constraints tn tnfc ps pDocs fds ds mcn cd
              logElab 1 (show (m, ty', capp, margs))
              logElab 2 ("Definition: " ++ showTmImpls lhs ++ " = " ++ showTmImpls rhs)
              return [PTy doc [] syn fc o m mfc ty',
-                     PClauses fc [Inlinable] m [PClause fc m lhs [] rhs []]]
+                     PClauses fc [Inlinable] m [PAutoProveClause (PClause fc m lhs [] rhs [])]]
 
     getMArgs (PPi (Imp _ _ _ _) n _ ty sc) = IA n : getMArgs sc
     getMArgs (PPi (Exp _ _ _) n _ ty sc) = EA n : getMArgs sc

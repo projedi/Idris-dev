@@ -796,10 +796,18 @@ highlightSource fc annot =
 --
 -- 4. The where block (PDecl' t)
 
-data PClause' t = PClause  FC Name t [t] t                    [PDecl' t] -- ^ A normal top-level definition.
-                | PWith    FC Name t [t] t (Maybe (Name, FC)) [PDecl' t]
-                | PClauseR FC        [t] t                    [PDecl' t]
-                | PWithR   FC        [t] t (Maybe (Name, FC)) [PDecl' t]
+data PClause'' t = PClause  FC Name t [t] t                    [PDecl' t] -- ^ A normal top-level definition.
+                 | PWith    FC Name t [t] t (Maybe (Name, FC)) [PDecl' t]
+                 | PClauseR FC        [t] t                    [PDecl' t]
+                 | PWithR   FC        [t] t (Maybe (Name, FC)) [PDecl' t]
+    deriving Functor
+{-!
+deriving instance Binary PClause''
+deriving instance NFData PClause''
+!-}
+
+data PClause' t = PAutoProveClause (PClause'' t)
+                | PProveClause t (PClause'' t)
     deriving Functor
 {-!
 deriving instance Binary PClause'
@@ -2082,13 +2090,17 @@ prettyName infixParen showNS bnd n
 
 
 showCImp :: PPOption -> PClause -> Doc OutputAnnotation
-showCImp ppo (PClause _ n l ws r w)
+showCImp ppo (PAutoProveClause c) = showCImp' ppo c
+showCImp ppo (PProveClause prf c) = text "%proveCase" <+> prettyImp ppo prf <$> showCImp' ppo c
+
+showCImp' :: PPOption -> (PClause'' PTerm) -> Doc OutputAnnotation
+showCImp' ppo (PClause _ n l ws r w)
  = prettyImp ppo l <+> showWs ws <+> text "=" <+> prettyImp ppo r
              <+> text "where" <+> text (show w)
   where
     showWs [] = empty
     showWs (x : xs) = text "|" <+> prettyImp ppo x <+> showWs xs
-showCImp ppo (PWith _ n l ws r pn w)
+showCImp' ppo (PWith _ n l ws r pn w)
  = prettyImp ppo l <+> showWs ws <+> text "with" <+> prettyImp ppo r
                  <+> braces (text (show w))
   where

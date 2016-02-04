@@ -553,7 +553,7 @@ elabCaseFun ind paramPos n ty cons info = do
           let recArgs = findRecArgs consArgs
           let recElims = if ind then map applyRecElim recArgs else []
           let rhsExpr    = PApp elimFC (PRef elimFC [] cnsElim) (map convertArg implidxs ++ map convertArg consArgs ++ recElims)
-          return $ PClause elimFC elimDeclName lhsPattern [] rhsExpr []
+          return $ PAutoProveClause $ PClause elimFC elimDeclName lhsPattern [] rhsExpr []
             where applyRecElim :: (Name, Plicity, PTerm) -> PArg
                   applyRecElim (constr@(recCnm,_,recTy)) = pexp $ PApp elimFC (PRef elimFC [] elimDeclName) (generalArgs ++ map pexp idxs ++ [pexp $ PRef elimFC [] recCnm])
                     where (_, idxs) = splitArgPms recTy

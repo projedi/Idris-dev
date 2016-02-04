@@ -142,7 +142,7 @@ elabInstance info syn doc argDocs what fc cs acc n nfc ps t expn ds = do
          logElab 5 $ "Instance RHS " ++ show rhs
 
          let idecls = [PClauses fc [Dictionary] iname
-                                 [PClause fc iname lhs [] rhs wb]]
+                                 [PAutoProveClause (PClause fc iname lhs [] rhs wb)]]
          logElab 1 (show idecls)
          push_estack iname True
          mapM_ (rec_elabDecl info EAll info) idecls

@@ -857,8 +857,10 @@ process fn (NewDefn decls) = do
   getName (PClass doc syn fc constraints name nfc parms parmdocs fds decls _ _) = Just name
   getName _ = Nothing
   -- getClauseName is partial and I am not sure it's used safely! -- trillioneyes
-  getClauseName (PClause fc name whole with rhs whereBlock) = name
-  getClauseName (PWith fc name whole with rhs pn whereBlock) = name
+  getClauseName (PAutoProveClause c) = getClauseName' c
+  getClauseName (PProveClause _ c) = getClauseName' c
+  getClauseName' (PClause fc name whole with rhs whereBlock) = name
+  getClauseName' (PWith fc name whole with rhs pn whereBlock) = name
   defineName :: [PDecl] -> Idris ()
   defineName (tyDecl@(PTy docs argdocs syn fc opts name _ ty) : decls) = do
     elabDecl EAll recinfo tyDecl
@@ -886,10 +888,13 @@ process fn (NewDefn decls) = do
   getClauses (PClauses fc opts name clauses) = clauses
   getClauses _ = []
   getRHS :: PClause -> PTerm
-  getRHS (PClause fc name whole with rhs whereBlock) = rhs
-  getRHS (PWith fc name whole with rhs pn whereBlock) = rhs
-  getRHS (PClauseR fc with rhs whereBlock) = rhs
-  getRHS (PWithR fc with rhs pn whereBlock) = rhs
+  getRHS (PAutoProveClause c) = getRHS' c
+  getRHS (PProveClause _ c) = getRHS' c
+  getRHS' :: (PClause'' PTerm) -> PTerm
+  getRHS' (PClause fc name whole with rhs whereBlock) = rhs
+  getRHS' (PWith fc name whole with rhs pn whereBlock) = rhs
+  getRHS' (PClauseR fc with rhs whereBlock) = rhs
+  getRHS' (PWithR fc with rhs pn whereBlock) = rhs
   setReplDefined :: Maybe Name -> Idris ()
   setReplDefined Nothing = return ()
   setReplDefined (Just n) = do
