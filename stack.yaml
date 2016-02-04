@@ -4,7 +4,7 @@ packages:
 flags:
    idris:
      FFI: true
-     GMP: True
+     GMP: False
      curses: True
 extra-deps: 
 - annotated-wl-pprint-0.7.0
