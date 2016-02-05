@@ -406,7 +406,7 @@ elabPE info fc caller r =
                 elabType info defaultSyntax emptyDocstring [] fc opts newnm NoFC specTy
                 let def = map (\(lhs, rhs) ->
                                  let lhs' = mapPT hiddenToPH $ stripUnmatchable ist lhs in
-                                  PClause fc newnm lhs' [] rhs [])
+                                  PAutoProveClause (PClause fc newnm lhs' [] rhs []))
                               (pe_clauses specdecl)
                 trans <- elabTransform info fc False rhs lhs
                 elabClauses info fc (PEGenerated:opts) newnm def
@@ -536,10 +536,15 @@ findUnique ctxt env (Bind n b sc)
                  else findUnique ctxt ((n, b) : env) sc
 findUnique _ _ _ = []
 
--- Return the elaborated LHS/RHS, and the original LHS with implicits added
 elabClause :: ElabInfo -> FnOpts -> (Int, PClause) ->
               Idris (Either Term (Term, Term), PTerm)
-elabClause info opts (_, PClause fc fname lhs_in [] PImpossible [])
+elabClause info opts (n, PAutoProveClause c) = elabClause' info opts (n, c)
+elabClause info opts (n, PProveClause prf c) = _
+
+-- Return the elaborated LHS/RHS, and the original LHS with implicits added
+elabClause' :: ElabInfo -> FnOpts -> (Int, PClause'' PTerm) ->
+              Idris (Either Term (Term, Term), PTerm)
+elabClause' info opts (_, PClause fc fname lhs_in [] PImpossible [])
    = do let tcgen = Dictionary `elem` opts
         i <- get
         let lhs = addImpl [] i lhs_in
@@ -549,7 +554,7 @@ elabClause info opts (_, PClause fc fname lhs_in [] PImpossible [])
                                 (Msg $ show lhs_in ++ " is a valid case"))
             False -> do ptm <- mkPatTm lhs_in
                         return (Left ptm, lhs)
-elabClause info opts (cnum, PClause fc fname lhs_in_as withs rhs_in_as whereblock)
+elabClause' info opts (cnum, PClause fc fname lhs_in_as withs rhs_in_as whereblock)
    = do let tcgen = Dictionary `elem` opts
         push_estack fname False
         ctxt <- getContext
@@ -802,7 +807,7 @@ elabClause info opts (cnum, PClause fc fname lhs_in_as withs rhs_in_as wherebloc
     isOutsideWith (PApp _ (PRef _ _ (SN (WithN _ _))) _) = False
     isOutsideWith _ = True
 
-elabClause info opts (_, PWith fc fname lhs_in withs wval_in pn_in withblock)
+elabClause' info opts (_, PWith fc fname lhs_in withs wval_in pn_in withblock)
    = do let tcgen = Dictionary `elem` opts
         ctxt <- getContext
         -- Build the LHS as an "Infer", and pull out its type and
@@ -982,7 +987,10 @@ elabClause info opts (_, PWith fc fname lhs_in withs wval_in pn_in withblock)
         | otherwise = ifail $ show fc ++ "with clause uses wrong function name " ++ show n
     mkAuxC pn wname lhs ns ns' d = return $ d
 
-    mkAux pn wname toplhs ns ns' (PClause fc n tm_in (w:ws) rhs wheres)
+    mkAux pn wname toplhs ns ns' (PAutoProveClause c) = PAutoProveClause `fmap` (mkAux' pn wname toplhs ns ns' c)
+    mkAux pn wname toplhs ns ns' (PProveClause prf c) = _
+
+    mkAux' pn wname toplhs ns ns' (PClause fc n tm_in (w:ws) rhs wheres)
         = do i <- getIState
              let tm = addImplPat i tm_in
              logElab 2 ("Matching " ++ showTmImpls tm ++ " against " ++
@@ -993,7 +1001,7 @@ elabClause info opts (_, PWith fc fname lhs_in withs wval_in pn_in withblock)
                     do logElab 3 ("Match vars : " ++ show mvars)
                        lhs <- updateLHS n pn wname mvars ns ns' (fullApp tm) w
                        return $ PClause fc wname lhs ws rhs wheres
-    mkAux pn wname toplhs ns ns' (PWith fc n tm_in (w:ws) wval pn' withs)
+    mkAux' pn wname toplhs ns ns' (PWith fc n tm_in (w:ws) wval pn' withs)
         = do i <- getIState
              let tm = addImplPat i tm_in
              logElab 2 ("Matching " ++ showTmImpls tm ++ " against " ++
@@ -1004,7 +1012,7 @@ elabClause info opts (_, PWith fc fname lhs_in withs wval_in pn_in withblock)
                 Right mvars ->
                     do lhs <- updateLHS n pn wname mvars ns ns' (fullApp tm) w
                        return $ PWith fc wname lhs ws wval pn' withs'
-    mkAux pn wname toplhs ns ns' c
+    mkAux' pn wname toplhs ns ns' c
         = ifail $ show fc ++ ":badly formed with clause"
 
     addArg (PApp fc f args) w = PApp fc f (args ++ [pexp w])
