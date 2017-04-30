@@ -1,3 +1,6 @@
+import Pruviloj
+import Pruviloj.Internals
+
 -- id' : (a : Type) -> (x : a) -> a
 -- id' a x = x
 
@@ -9,20 +12,36 @@ id'_decl = declareType $
                ]
              (Var `{{a}})
 
-id'_lhs : Raw
-id'_lhs =
-  RBind `{{a}} (PVar `(Type)) $
-  RBind `{{x}} (PVar (Var `{{a}})) $
-    ((Var `{{id'}}) `RApp` (Var `{{a}})) `RApp` (Var `{{x}})
+id'_lhs : Elab ()
+id'_lhs = do
+  [a, x] <- apply (Var `{{id'}}) [False, False]
+  -- Fill a
+  focus a
+  claim `{{a}} `(Type)
+  unfocus `{{a}}
+  fill (Var `{{a}})
+  solve
+  -- Fill x
+  focus x
+  claim `{{x}} (Var `{{a}})
+  unfocus `{{x}}
+  fill (Var `{{x}})
+  solve
+  -- Fill id' a x
+  solve
 
-id'_rhs : Raw
-id'_rhs =
-  RBind `{{a}} (PVar `(Type)) $
-  RBind `{{x}} (PVar (Var `{{a}})) $
-    Var `{{x}}
+id'_rhs : Elab ()
+id'_rhs = do
+  fill (Var `{{x}})
+  solve
+
+id'_clause : Elab (FunClause Raw)
+id'_clause = elabPatternClause id'_lhs id'_rhs
 
 id'_impl : Elab ()
-id'_impl = defineFunction $ DefineFun `{{id'}} [MkFunClause id'_lhs id'_rhs]
+id'_impl = do
+  cl <- id'_clause
+  defineFunction $ DefineFun `{{id'}} [cl]
 
 %runElab (do
          id'_decl
