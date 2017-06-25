@@ -471,6 +471,10 @@ instance Binary Raw where
                                    put x1
                 RUType x1 -> do putWord8 5
                                 put x1
+                RRewrite x1 x2 x3 -> do putWord8 6
+                                        put x1
+                                        put x2
+                                        put x3
         get
           = do i <- getWord8
                case i of
@@ -488,6 +492,10 @@ instance Binary Raw where
                            return (RConstant x1)
                    5 -> do x1 <- get
                            return (RUType x1)
+                   6 -> do x1 <- get
+                           x2 <- get
+                           x3 <- get
+                           return (RRewrite x1 x2 x3)
                    _ -> error "Corrupted binary data for Raw"
 
 instance Binary RigCount where
@@ -661,6 +669,10 @@ instance {- (Binary n) => -} Binary (TT Name) where
                 Inferred x1 -> put x1 -- drop the 'Inferred'
                 UType x1 -> do putWord8 10
                                put x1
+                TRewrite x1 x2 x3 -> do putWord8 11
+                                        put x1
+                                        put x2
+                                        put x3
         get
           = do i <- getWord8
                case i of
@@ -690,4 +702,8 @@ instance {- (Binary n) => -} Binary (TT Name) where
                            return (V x1)
                    10 -> do x1 <- get
                             return (UType x1)
+                   11 -> do x1 <- get
+                            x2 <- get
+                            x3 <- get
+                            return (TRewrite x1 x2 x3)
                    _ -> error "Corrupted binary data for TT"

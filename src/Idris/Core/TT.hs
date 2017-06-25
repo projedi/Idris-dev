@@ -822,6 +822,7 @@ data Raw = Var Name
          | RType
          | RUType Universe
          | RConstant Const
+         | RRewrite Raw Raw Raw
   deriving (Show, Eq, Ord, Data, Generic, Typeable)
 
 instance Sized Raw where
@@ -831,6 +832,7 @@ instance Sized Raw where
   size RType = 1
   size (RUType _) = 1
   size (RConstant const) = size const
+  size (RRewrite leq req t) = 1 + size leq + size req + size t
 
 instance Pretty Raw OutputAnnotation where
   pretty = text . show
@@ -1018,6 +1020,7 @@ data TT n = P NameType n (TT n) -- ^ named references with type
                             -- given by the programmer
           | TType UExp -- ^ the type of types at some level
           | UType Universe -- ^ Uniqueness type universe (disjoint from TType)
+          | TRewrite (TT n) (TT n) (TT n)
   deriving (Ord, Functor, Data, Generic, Typeable)
 {-!
 deriving instance Binary TT
@@ -1048,6 +1051,7 @@ instance TermSize (TT Name) where
              termsize rn sc
     termsize n (App _ f a) = termsize n f + termsize n a
     termsize n (Proj t i) = termsize n t
+    termsize n (TRewrite leq req t) = termsize n leq + termsize n req + termsize n t
     termsize n _ = 1
 
 instance Sized Universe where
@@ -1065,6 +1069,7 @@ instance Sized a => Sized (TT a) where
   size Impossible = 1
   size (Inferred t) = size t
   size (UType u) = 1 + size u
+  size (TRewrite leq req t) = 1 + size leq + size req + size t
 
 instance Pretty a o => Pretty (TT a) o where
   pretty _ = text "test"
@@ -1428,6 +1433,7 @@ termSmallerThan x Impossible = True
 termSmallerThan x (Inferred t) = termSmallerThan x t
 termSmallerThan x (TType u) = True
 termSmallerThan x (UType u) = True
+termSmallerThan x (TRewrite leq req t) = termSmallerThan (x-1) leq && termSmallerThan (x-1) req && termSmallerThan (x-1) t
 
 
 -- | Cast a 'TT' term to a 'Raw' value, discarding universe information and
@@ -1469,6 +1475,7 @@ safeForgetEnv env Erased    = Just $ RConstant Forgot
 safeForgetEnv env (Proj tm i) = error "Don't know how to forget a projection"
 safeForgetEnv env Impossible = error "Don't know how to forget Impossible"
 safeForgetEnv env (Inferred t) = safeForgetEnv env t
+safeForgetEnv env (TRewrite leq req t) = liftM3 RRewrite (safeForgetEnv env leq) (safeForgetEnv env req) (safeForgetEnv env t)
 
 -- | Introduce a 'Bind' into the given term for each element of the
 -- given list of (name, binder) pairs.
@@ -1633,6 +1640,7 @@ prettyEnv env t = prettyEnv' env t False
     prettySe p env Impossible debug = text "Impossible"
     prettySe p env (Inferred tm) debug = text "<" <+> prettySe p env tm debug <+> text ">"
     prettySe p env (UType u) debug = text (show u)
+    prettySe p env (TRewrite leq req t) debug = text "rewrite" <+> prettySe p env leq debug <+> text "=" <+> prettySe p env req debug <+> text "in" <+> prettySe p env t debug
 
     -- Render a `Binder` and its name
     prettySb env n (Lam _ t) = prettyB env "λ" "=>" n t
@@ -1684,6 +1692,7 @@ showEnv' env t dbg = se 10 env t where
     se p env (Inferred t) = "<" ++ se p env t ++ ">"
     se p env (TType i) = "Type " ++ show i
     se p env (UType u) = show u
+    se p env (TRewrite leq req t) = "rewrite " ++ se p env leq ++ " = " ++ se p env req ++ " in " ++ se p env t
 
     sb env n (Lam Rig1 t)  = showb env "\\ 1 " " => " n t
     sb env n (Lam _ t)  = showb env "\\ " " => " n t
@@ -1799,6 +1808,7 @@ pprintTT bound tm = pp startPrec bound tm
     pp p bound (TType ue) = annotate (AnnType "Type" "The type of types") $
                             text "Type"
     pp p bound (UType u) = text (show u)
+    pp p bound (TRewrite leq req t) = text "rewrite" <+> pp p bound leq <+> text "=" <+> pp p bound req <+> text "in" <+> pp p bound t
 
     ppb p bound n (Lam rig ty) sc =
       bracket p startPrec . group . align . hang 2 $
@@ -1916,6 +1926,9 @@ pprintRaw bound (RUType u) = enclose lparen rparen . group . align . hang 2 $
 pprintRaw bound (RConstant c) =
   enclose lparen rparen . group . align . hang 2 $
   vsep [text "RConstant", annotate (AnnConst c) (text (show c))]
+pprintRaw bound (RRewrite leq req t) =
+  enclose lparen rparen . group . align . hang 2 . vsep $
+  [text "RRewrite", pprintRaw bound leq, pprintRaw bound req, pprintRaw bound t]
 
 -- | Pretty-printer helper for the binding site of a name
 bindingOf :: Name -- ^^ the bound name

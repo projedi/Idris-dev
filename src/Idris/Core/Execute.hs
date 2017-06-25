@@ -246,6 +246,7 @@ doExec env ctxt Impossible = fail "Tried to execute an impossible case"
 doExec env ctxt (Inferred t) = doExec env ctxt t
 doExec env ctxt (TType u) = return (EType u)
 doExec env ctxt (UType u) = return (EUType u)
+doExec env ctxt (TRewrite leq req t) = doExec env ctxt t
 
 execApp :: ExecEnv -> Context -> ExecVal -> [ExecVal] -> Exec ExecVal
 execApp env ctxt v [] = return v -- no args is just a constant! can result from function calls

@@ -191,6 +191,7 @@ delabTy' ist imps genv tm fullname mvs docases = de genv [] imps tm
     de tys env _ (Inferred t) = Placeholder
     de tys env _ (TType i) = PType un
     de tys env _ (UType u) = PUniverse un u
+    de tys env plic (TRewrite leq req t) = PRewrite NoFC Nothing undefined (de tys env plic t) Nothing
 
     dens x | fullname = x
     dens ns@(NS n _) = case lookupCtxt n (idris_implicits ist) of

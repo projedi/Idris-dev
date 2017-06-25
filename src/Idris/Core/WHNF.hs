@@ -110,6 +110,7 @@ do_whnf ctxt genv tm = eval (WEnv 0 []) [] tm
     eval env stk (Inferred tm) = eval env stk tm
     eval env stk (TType u) = unload (WType u) stk
     eval env stk (UType u) = unload (WUType u) stk
+    eval env stk (TRewrite leq req t) = eval env stk t
 
     apply :: WEnv -> NameType -> Name -> Type -> Stack -> WHNF
     apply env nt n ty stk

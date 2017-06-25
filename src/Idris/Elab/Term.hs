@@ -1844,6 +1844,7 @@ runElabAction info ist fc env tm ns = do tm' <- eval tm
     fakeTT RType = TType (UVar [] (-1))
     fakeTT (RUType u) = UType u
     fakeTT (RConstant c) = Constant c
+    fakeTT (RRewrite leq req t) = TRewrite (fakeTT leq) (fakeTT req) (fakeTT t)
 
     defineFunction :: RFunDefn Raw -> ElabD ()
     defineFunction (RDefineFun n clauses) =

@@ -386,6 +386,7 @@ eval traceon ctxt ntimes genv tm opts = ev ntimes [] True [] tm where
     ev ntimes stk top env (Inferred tm) = ev ntimes stk top env tm
     ev ntimes stk top env (TType i)   = return $ VType i
     ev ntimes stk top env (UType u)   = return $ VUType u
+    ev ntimes stk top env (TRewrite leq req t) = ev ntimes stk top env tm
 
     evApply ntimes stk top env args (VApp f a)
           = evApply ntimes stk top env (a:args) f
