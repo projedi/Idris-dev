@@ -7,7 +7,7 @@ Maintainer  : The Idris Community.
 -}
 {-# LANGUAGE PatternGuards #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
-module Idris.Elab.Rewrite(elabRewrite, elabRewriteLemma) where
+module Idris.Elab.Rewrite(elabRewrite, elabRewriteLemma, elabRewriteInPattern) where
 
 import Idris.AbsSyntax
 import Idris.AbsSyntaxTree
@@ -259,3 +259,6 @@ mkLemma info lemma tcon ps ty =
     bindIdxs ist (ImplicitIndex : pinfo) (Bind n (Pi _ _ ty _) sc) (i : is) tm
         = bindIdxs ist pinfo (instantiate (P Bound n ty) sc) is tm
     bindIdxs _ _ _ _ tm = tm
+
+elabRewriteInPattern :: (PTerm -> ElabD ()) -> IState -> FC -> Maybe Name -> PTerm -> PTerm -> Maybe PTerm -> ElabD ()
+elabRewriteInPattern = undefined
