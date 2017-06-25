@@ -261,4 +261,5 @@ mkLemma info lemma tcon ps ty =
     bindIdxs _ _ _ _ tm = tm
 
 elabRewriteInPattern :: (PTerm -> ElabD ()) -> IState -> FC -> Maybe Name -> PTerm -> PTerm -> Maybe PTerm -> ElabD ()
-elabRewriteInPattern = undefined
+elabRewriteInPattern elab ist fc Nothing rule sc_in Nothing = _
+elabRewriteInPattern elab ist fc substfn_in rule sc_in newg = undefined
