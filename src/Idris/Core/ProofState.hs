@@ -91,6 +91,7 @@ data Tactic = Attack
             | LetBind Name RigCount Raw Raw
             | ExpandLet Name Term
             | Rewrite Raw
+            | RewriteForPattern Raw Raw Raw Raw
             | Induction Raw
             | CaseTac Raw
             | Equiv Raw
@@ -726,6 +727,9 @@ mkP lt l r (Bind n b sc)
                              b { binderTy = ty' }
 mkP lt l r x = x
 
+rewriteForPattern :: Raw -> Raw -> Raw -> Raw -> RunTactic
+rewriteForPattern lt rt prf tm ctxt env _ = undefined
+
 casetac :: Raw -> Bool -> RunTactic
 casetac tm induction ctxt env (Bind x (Hole t) (P _ x' _)) | x == x' = do
   (tmv, tmt) <- lift $ check ctxt env tm
@@ -1109,6 +1113,7 @@ process t h = tactic (Just h) (mktac t)
          mktac (LetBind n r t v) = letbind n r t v
          mktac (ExpandLet n b)   = expandLet n b
          mktac (Rewrite t)       = rewrite t
+         mktac (RewriteForPattern lt rt prf tm) = rewriteForPattern lt rt prf tm
          mktac (Induction t)     = casetac t True
          mktac (CaseTac t)       = casetac t False
          mktac (Equiv t)         = equiv t
