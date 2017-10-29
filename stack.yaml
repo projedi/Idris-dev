@@ -6,8 +6,8 @@ packages:
 
 flags:
   idris:
-    FFI: true
-    GMP: true
+    FFI: false
+    GMP: false
 
 ghc-options:
   idris: -fwarn-unused-imports -fwarn-unused-binds
