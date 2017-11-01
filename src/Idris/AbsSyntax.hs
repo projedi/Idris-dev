@@ -1858,7 +1858,7 @@ addImpl' inpat env infns imp_meths ist ptm
     ai inpat qq env ds (PHidden (PRef fc hl f))
         | not (f `elem` map fst env) = PHidden (handleErr $ aiFn topname inpat False qq imp_meths ist fc f fc ds [])
     ai inpat qq env ds (PRewrite fc by l r g)
-       = let l' = ai False qq env ds l
+       = let l' = ai inpat qq env ds l
              r' = ai inpat qq env ds r
              g' = fmap (ai inpat qq env ds) g in
          PRewrite fc by l' r' g'
