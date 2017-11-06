@@ -20,8 +20,16 @@ total
 vecPrf : (a : Type) -> (n : Nat) -> Vect (plus n (S Z)) a = Vect (S n) a
 vecPrf _ n = rewrite (plusCommutative (S Z) n) in Refl
 
+total
 head : (a : Type) -> (n : Nat) -> (xs : Vect (plus n (S Z)) a) -> a
 head a n (rewrite (vecPrf a n) in (Cons x xs)) = x
+head a n Nil = _
+
+{-
+total
+checkHead : head Nat (S Z) (Cons Z (Cons (S Z) Nil)) = Z
+checkHead = Refl
+-}
 
 {-
 head : (a : Type) -> (n : Nat) -> (xs : Vect (plus (S Z) n) a) -> a
