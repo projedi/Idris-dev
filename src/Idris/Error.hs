@@ -161,3 +161,4 @@ warnDisamb ist (PAs _ _ tm) = warnDisamb ist tm
 warnDisamb ist (PAppImpl tm _) = warnDisamb ist tm
 warnDisamb ist (PRunElab _ tm _) = warnDisamb ist tm
 warnDisamb ist (PConstSugar _ tm) = warnDisamb ist tm
+warnDisamb ist (PBuiltinRewrite _) = return ()

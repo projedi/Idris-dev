@@ -802,6 +802,7 @@ data Raw = Var Name
          | RType
          | RUType Universe
          | RConstant Const
+         | RBuiltinRewrite
   deriving (Show, Eq, Ord, Data, Generic, Typeable)
 
 instance Sized Raw where
@@ -811,6 +812,7 @@ instance Sized Raw where
   size RType = 1
   size (RUType _) = 1
   size (RConstant const) = size const
+  size (RBuiltinRewrite) = 1
 
 instance Pretty Raw OutputAnnotation where
   pretty = text . show
@@ -999,6 +1001,7 @@ data TT n = P NameType n (TT n) -- ^ named references with type
                             -- given by the programmer
           | TType UExp -- ^ the type of types at some level
           | UType Universe -- ^ Uniqueness type universe (disjoint from TType)
+          | BuiltinRewrite
   deriving (Ord, Functor, Data, Generic, Typeable)
 {-!
 deriving instance Binary TT
@@ -1046,6 +1049,7 @@ instance Sized a => Sized (TT a) where
   size Impossible = 1
   size (Inferred t) = size t
   size (UType u) = 1 + size u
+  size BuiltinRewrite = 1
 
 instance Pretty a o => Pretty (TT a) o where
   pretty _ = text "test"
@@ -1125,6 +1129,7 @@ instance Eq n => Eq (TT n) where
     (==) (Proj x i)     (Proj y j)     = x == y && i == j
     (==) Erased         _              = True
     (==) _              Erased         = True
+    (==) BuiltinRewrite BuiltinRewrite = True
     (==) _              _              = False
 
 -- * A few handy operations on well typed terms:
@@ -1409,6 +1414,7 @@ termSmallerThan x Impossible = True
 termSmallerThan x (Inferred t) = termSmallerThan x t
 termSmallerThan x (TType u) = True
 termSmallerThan x (UType u) = True
+termSmallerThan x BuiltinRewrite = True
 
 
 -- | Cast a 'TT' term to a 'Raw' value, discarding universe information and
@@ -1450,6 +1456,7 @@ safeForgetEnv env Erased    = Just $ RConstant Forgot
 safeForgetEnv env (Proj tm i) = error "Don't know how to forget a projection"
 safeForgetEnv env Impossible = error "Don't know how to forget Impossible"
 safeForgetEnv env (Inferred t) = safeForgetEnv env t
+safeForgetEnv env BuiltinRewrite = Just $ RBuiltinRewrite
 
 -- | Introduce a 'Bind' into the given term for each element of the
 -- given list of (name, binder) pairs.
@@ -1614,6 +1621,7 @@ prettyEnv env t = prettyEnv' env t False
     prettySe p env Impossible debug = text "Impossible"
     prettySe p env (Inferred tm) debug = text "<" <+> prettySe p env tm debug <+> text ">"
     prettySe p env (UType u) debug = text (show u)
+    prettySe p env BuiltinRewrite debug = text "BuiltinRewrite"
 
     -- Render a `Binder` and its name
     prettySb env n (Lam _ t) = prettyB env "λ" "=>" n t
@@ -1666,6 +1674,7 @@ showEnv' env t dbg = se 10 env t where
     se p env (Inferred t) = "<" ++ se p env t ++ ">"
     se p env (TType i) = "Type " ++ show i
     se p env (UType u) = show u
+    se p env (BuiltinRewrite) = "[rewrite]"
 
     sb env n (Lam Rig1 t)  = showb env "\\ 1 " " => " n t
     sb env n (Lam _ t)  = showb env "\\ " " => " n t
@@ -1783,6 +1792,7 @@ pprintTT bound tm = pp startPrec bound tm
     pp p bound (TType ue) = annotate (AnnType "Type" "The type of types") $
                             text "Type"
     pp p bound (UType u) = text (show u)
+    pp p bound BuiltinRewrite = text "<<<rewrite>>>"
 
     ppb p bound n (Lam rig ty) sc =
       bracket p startPrec . group . align . hang 2 $
@@ -1900,6 +1910,7 @@ pprintRaw bound (RUType u) = enclose lparen rparen . group . align . hang 2 $
 pprintRaw bound (RConstant c) =
   enclose lparen rparen . group . align . hang 2 $
   vsep [text "RConstant", annotate (AnnConst c) (text (show c))]
+pprintRaw bound RBuiltinRewrite = text "RBuiltinRewrite"
 
 -- | Pretty-printer helper for the binding site of a name
 bindingOf :: Name -- ^^ the bound name

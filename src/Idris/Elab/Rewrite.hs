@@ -290,14 +290,19 @@ elabRewriteInPattern elab ist fc substfn_in rule sc_in newg
                         when (g == pred_tt) $ lift $ tfail (NoRewriting l r g)
                         let pred = PLam fc rname fc Placeholder
                                         (delab ist pred_tt)
-                        let rewrite = addImplBound ist (map fstEnv env) (PApp fc (PRef fc [] substfn)
-                                           [pexp (stripImpls pred),
+                        let rewrite = addImplBound ist (map fstEnv env) (PApp fc (PBuiltinRewrite fc)
+                                           [pimp (sMN 0 "a") Placeholder True,
+                                            pimp (sMN 0 "x") Placeholder True,
+                                            pimp (sMN 0 "y") Placeholder True,
+                                            pexp (stripImpls pred),
                                             pexp (stripImpls rule), pexp sc])
+                        {-
                         trace ("LHS: " ++ show l ++ "\n" ++
                                "RHS: " ++ show r ++ "\n" ++
                                "REWRITE: " ++ show rewrite ++ "\n" ++
                                "GOAL: " ++ show (delab ist g)) $
-                         elab rewrite
+                        -}
+                        elab rewrite
                         solve
                   _ -> lift $ tfail (NotEquality tmv ttrule)
       where

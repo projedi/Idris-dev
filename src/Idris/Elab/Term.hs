@@ -974,6 +974,7 @@ elab ist info emode opts fn tm
         where headRef (PRef _ _ _) = True
               headRef (PApp _ f _) = headRef f
               headRef (PAlternative _ _ as) = all headRef as
+              headRef (PBuiltinRewrite _) = True
               headRef _ = False
 
     elab' ina fc (PAppImpl f es) = do appImpl (reverse es) -- not that we look...
@@ -1328,6 +1329,9 @@ elab ist info emode opts fn tm
              highlightConst fc (Constant c) =
                highlightSource fc (AnnConst c)
              highlightConst _ _ = return ()
+    elab' ina fc (PBuiltinRewrite _) = do
+      apply RBuiltinRewrite []
+      solve
     elab' ina fc x = fail $ "Unelaboratable syntactic form " ++ showTmImpls x
 
     -- delay elaboration of 't', with priority 'pri' until after everything
@@ -1809,6 +1813,7 @@ runElabAction info ist fc env tm ns = do tm' <- eval tm
     fakeTT RType = TType (UVar [] (-1))
     fakeTT (RUType u) = UType u
     fakeTT (RConstant c) = Constant c
+    fakeTT RBuiltinRewrite = BuiltinRewrite
 
     defineFunction :: RFunDefn Raw -> ElabD ()
     defineFunction (RDefineFun n clauses) =

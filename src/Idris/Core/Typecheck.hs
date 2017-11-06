@@ -310,6 +310,9 @@ check' holes tcns ctxt env top
             = return (Bind n (PVar r t) scv, Bind n (PVTy t) sct, ns)
           discharge n (PVTy t) bt scv sct ns
             = return (Bind n (PVTy t) scv, sct, ns)
+  chk rigc u lvl env RBuiltinRewrite = do
+    (tm, ty, rest) <- chk rigc u lvl env (Var (UN $ txt "rewrite__impl"))
+    return (BuiltinRewrite, ty, rest)
 
 -- Number of times a name can be used
 data UniqueUse = Never -- no more times

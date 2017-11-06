@@ -358,6 +358,8 @@ eval traceon ctxt ntimes genv tm opts = ev ntimes [] True [] tm where
        | Just (CaseOp _ _ _ _ _ _, _) <- lookupDefAccExact n (spec || (atRepl && noFree env)|| runtime) ctxt,
          at == txt "assert_total" && not (simpl || unfold)
             = ev ntimes (n : stk) top env arg
+    ev ntimes stk top env (App _ (App _ (App _ (App _ (App _ (App _ BuiltinRewrite a) x) y) pred) rule) arg)
+           = ev ntimes stk False env arg
     ev ntimes stk top env (App _ f a)
            = do f' <- ev ntimes stk False env f
                 a' <- ev ntimes stk False env a
@@ -377,6 +379,7 @@ eval traceon ctxt ntimes genv tm opts = ev ntimes [] True [] tm where
     ev ntimes stk top env (Inferred tm) = ev ntimes stk top env tm
     ev ntimes stk top env (TType i)   = return $ VType i
     ev ntimes stk top env (UType u)   = return $ VUType u
+    ev ntimes stk top env BuiltinRewrite = undefined
 
     evApply ntimes stk top env args (VApp f a)
           = evApply ntimes stk top env (a:args) f

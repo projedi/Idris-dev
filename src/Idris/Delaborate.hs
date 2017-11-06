@@ -190,6 +190,7 @@ delabTy' ist imps genv tm fullname mvs docases = de genv [] imps tm
     de tys env _ (Inferred t) = Placeholder
     de tys env _ (TType i) = PType un
     de tys env _ (UType u) = PUniverse un u
+    de tys env _ (BuiltinRewrite) = PBuiltinRewrite NoFC
 
     deFn tys env (App _ f a) args = deFn tys env f (a:args)
     deFn tys env (P _ n _) [l,r]

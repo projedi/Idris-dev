@@ -342,6 +342,7 @@ instance Binary (TT Name) where
                 Inferred x1 -> put x1 -- drop the 'Inferred'
                 UType x1 -> do putWord8 10
                                put x1
+                BuiltinRewrite -> putWord8 11
         get
           = do i <- getWord8
                case i of
@@ -371,4 +372,5 @@ instance Binary (TT Name) where
                            return (V x1)
                    10 -> do x1 <- get
                             return (UType x1)
+                   11 -> return BuiltinRewrite
                    _ -> error "Corrupted binary data for TT"

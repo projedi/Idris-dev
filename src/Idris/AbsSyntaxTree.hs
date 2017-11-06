@@ -1008,6 +1008,7 @@ data PTerm = PQuote Raw         -- ^ Inclusion of a core term into the
            | PConstSugar FC PTerm
              -- ^ A desugared constant. The FC is a precise source
              -- location that will be used to highlight it later.
+           | PBuiltinRewrite FC
        deriving (Eq, Ord, Data, Typeable, Generic)
 
 data PAltType = ExactlyOne Bool -- ^ flag sets whether delay is allowed
@@ -1988,6 +1989,7 @@ pprintPTerm ppo bnd docArgs infixes = prettySe (ppopt_depth ppo) startPrec bnd
       (percent <> text "runElab") <$>
       prettySe (decD d) funcAppPrec bnd tm
     prettySe d p bnd (PConstSugar fc tm)      = prettySe d p bnd tm -- should never occur, but harmless
+    prettySe d p bnd (PBuiltinRewrite fc)     = text "PBuiltinRewrite"
     prettySe d p bnd _                        = text "missing pretty-printer for term"
 
     prettyBindingOf :: Name -> Bool -> Doc OutputAnnotation

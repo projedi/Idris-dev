@@ -519,6 +519,7 @@ reflectTTQuotePattern unq (UType u)
                            UniqueType -> "UniqueType"
                            AllTypes -> "AllTypes")))
        solve
+reflectTTQuotePattern unq BuiltinRewrite = undefined
 
 reflectRawQuotePattern :: [Name] -> Raw -> ElabD ()
 reflectRawQuotePattern unq (Var n)
@@ -554,6 +555,7 @@ reflectRawQuotePattern unq (RBind n b sc) =
         freeNamesR RType = []
         freeNamesR (RUType _) = []
         freeNamesR (RConstant _) = []
+        freeNamesR RBuiltinRewrite = []
 reflectRawQuotePattern unq (RApp f x) =
   do fH <- getNameFrom (sMN 0 "f")
      claim fH (Var (reflm "Raw"))
@@ -582,6 +584,7 @@ reflectRawQuotePattern unq (RConstant c) =
      fill (reflCall "RConstant" [Var cH]); solve
      focus cH
      fill (reflectConstant c); solve
+reflectRawQuotePattern unq RBuiltinRewrite = undefined
 
 reflectBinderQuotePattern :: ([Name] -> a -> ElabD ()) -> Raw -> [Name] -> Binder a -> ElabD ()
 reflectBinderQuotePattern q ty unq (Lam _ t)
@@ -666,6 +669,7 @@ reflectTTQuote _   Impossible =
   error "Phase error! The Impossible constructor is for optimization only and should not have been reflected during elaboration."
 reflectTTQuote _   (Inferred tm) =
   error "Phase error! The Inferred constructor is for coverage checking only and should not have been reflected during elaboration."
+reflectTTQuote unq BuiltinRewrite = undefined
 
 reflectRawQuote :: [Name] -> Raw -> Raw
 reflectRawQuote unq (Var n)
@@ -679,6 +683,7 @@ reflectRawQuote unq RType = Var (reflm "RType")
 reflectRawQuote unq (RUType u) =
   reflCall "RUType" [reflectUniverse u]
 reflectRawQuote unq (RConstant cst) = reflCall "RConstant" [reflectConstant cst]
+reflectRawQuote unq RBuiltinRewrite = undefined
 
 reflectNameType :: NameType -> Raw
 reflectNameType (Bound) = Var (reflm "Bound")
